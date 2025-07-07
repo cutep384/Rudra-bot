@@ -34,7 +34,7 @@ priyansh.handleListenError=handleListene has occurred some unexpected errorr, er
 priyansh.warningSourceCode=DETECTED THAT SOURCE CODE'S STRUCTURE HAD BEEN CHANGED , STOP NOW!
 priyansh.refreshListen=Refreshed handleListener...
 priyansh.successConnectDatabase=Connected to database successfully!
-priyansh.failConnectDatabase=Failed to connect to database, error: %1
+Priyansh.failConnectDatabase=Failed to connect to database, error: %1
 
 includes/listen.js
 
@@ -62,14 +62,14 @@ users.needObject=Have to be an Object
 
 includes/handle/handleCommand.js
 
-handleCommand.userBanned=⛔️🚫\n%1\n%2\nContact B0T Owner Priyansh  🖤 For Unban ⚠️
-handleCommand.threadBanned=⛔️Your Thread/Box/Group Has Been Banned!⛔️\n%1\n%2 Please Contact Owner Priyansh For Unban ⚠️
+handleCommand.userBanned=⛔️🚫\n%1\n%2\nContact B0T Owner Rudra  🖤 For Unban ⚠️
+handleCommand.threadBanned=⛔️Your Thread/Box/Group Has Been Banned!⛔️\n%1\n%2 Please Contact Owner Rudra For Unban ⚠️
 handleCommand.commandNotExist=Abe Yaar Pura Command To Likh Le 😹 %1 Yes Or Not ? 🙄
 handleCommand.commandThreadBanned=Your thread is unable to use command "%1"
 handleCommand.commandUserBanned=You are unable to use command "%1"
 handleCommand.threadNotAllowNSFW=Your thread is not allowed to use NSFW commands
 handleCommand.cantGetInfoThread=Can't get your thread's info, error: %1
-handleCommand.permssionNotEnough=📑Ye command 📝Sirf Mere Øwner Prîyansh Ko Hi Allow Hai ✋❌ "%1"
+handleCommand.permssionNotEnough=📑Ye command 📝Sirf Mere Øwner Rudra KO Hi Allow Hai ✋❌ "%1"
 handleCommand.cantSetMessageReaction=Having some unexpected error at setMessageReaction, error: %1
 handleCommand.executeCommand=[ %1 ] Command used: %2 by user: %3 at thread: %4 | Args included: %5 | Processing time: %6ms
 handleCommand.commandError=Having some unexpected error when using command %1, error: %2
