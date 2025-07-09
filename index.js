@@ -19,26 +19,25 @@ app.get('/', function (req, res) {
 
 // Start the server and add error handling
 app.listen(port, () => {
-    logger(`Server is running on port ${port}...`, "[ Starting ]");
+    logger(`Server is running on port ${port}...`, "[ Rudra ]");
 }).on('error', (err) => {
     if (err.code === 'EACCES') {
-        logger(`Permission denied. Cannot bind to port ${port}.`, "[ Error ]");
+        logger(`Permission denied. Cannot bind to port ${port}.`, "[ Rudra ]");
     } else {
-        logger(`Server error: ${err.message}`, "[ Error ]");
+        logger(`Server error: ${err.message}`, "[ Rudra ]");
     }
 });
 
 /////////////////////////////////////////////////////////
-//========= Create start bot and make it loop =========//
+//========= Start bot with auto-restart on crash =======//
 /////////////////////////////////////////////////////////
 
-// Initialize global restart counter
 global.countRestart = global.countRestart || 0;
 
 function startBot(message) {
-    if (message) logger(message, "[ Starting ]");
+    if (message) logger(message, "[ Rudra ]");
 
-    const child = spawn("node", ["--trace-warnings", "--async-stack-traces", "Priyansh.js"], {
+    const child = spawn("node", ["--trace-warnings", "--async-stack-traces", "rudra.js"], {
         cwd: __dirname,
         stdio: "inherit",
         shell: true
@@ -46,31 +45,31 @@ function startBot(message) {
 
     child.on("close", (codeExit) => {
         if (codeExit !== 0 && global.countRestart < 5) {
-            global.countRestart += 1;
-            logger(`Bot exited with code ${codeExit}. Restarting... (${global.countRestart}/5)`, "[ Restarting ]");
+            global.countRestart++;
+            logger(`Bot exited with code ${codeExit}. Restarting... (${global.countRestart}/5)`, "[ Rudra ]");
             startBot();
         } else {
-            logger(`Bot stopped after ${global.countRestart} restarts.`, "[ Stopped ]");
+            logger(`Bot stopped after ${global.countRestart} restarts.`, "[ Rudra ]");
         }
     });
 
     child.on("error", (error) => {
-        logger(`An error occurred: ${JSON.stringify(error)}`, "[ Error ]");
+        logger(`An error occurred: ${JSON.stringify(error)}`, "[ Rudra ]");
     });
-};
+}
 
 ////////////////////////////////////////////////
-//========= Check update from Github =========//
+//========= Check update from GitHub =========//
 ////////////////////////////////////////////////
 
 axios.get("https://raw.githubusercontent.com/priyanshu192/bot/main/package.json")
     .then((res) => {
-        logger(res.data.name, "[ NAME ]");
-        logger(`Version: ${res.data.version}`, "[ VERSION ]");
-        logger(res.data.description, "[ DESCRIPTION ]");
+        logger(res.data.name, "[ Rudra ]");
+        logger(`Version: ${res.data.version}`, "[ Rudra ]");
+        logger(res.data.description, "[ Rudra ]");
     })
     .catch((err) => {
-        logger(`Failed to fetch update info: ${err.message}`, "[ Update Error ]");
+        logger(`Failed to fetch update info: ${err.message}`, "[ Rudra ]");
     });
 
 // Start the bot
