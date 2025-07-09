@@ -1,3 +1,4 @@
+// Rudra Loader
 const moment = require("moment-timezone");
 const { readdirSync, readFileSync, writeFileSync, existsSync, unlinkSync } = require("fs-extra");
 const { join, resolve } = require("path");
@@ -5,6 +6,7 @@ const { execSync } = require('child_process');
 const logger = require("./utils/log.js");
 const login = require("fca-smart-shankar");
 const axios = require("axios");
+const { Sequelize, sequelize } = require("./includes/database");
 const listPackage = JSON.parse(readFileSync('./package.json')).dependencies;
 const listbuiltinModules = require("module").builtinModules;
 
@@ -19,26 +21,17 @@ global.client = {
   mainPath: process.cwd(),
   configPath: "",
   getTime: function (option) {
-    switch (option) {
-      case "seconds":
-        return `${moment.tz("Asia/Kolkata").format("ss")}`;
-      case "minutes":
-        return `${moment.tz("Asia/Kolkata").format("mm")}`;
-      case "hours":
-        return `${moment.tz("Asia/Kolkata").format("HH")}`;
-      case "date":
-        return `${moment.tz("Asia/Kolkata").format("DD")}`;
-      case "month":
-        return `${moment.tz("Asia/Kolkata").format("MM")}`;
-      case "year":
-        return `${moment.tz("Asia/Kolkata").format("YYYY")}`;
-      case "fullHour":
-        return `${moment.tz("Asia/Kolkata").format("HH:mm:ss")}`;
-      case "fullYear":
-        return `${moment.tz("Asia/Kolkata").format("DD/MM/YYYY")}`;
-      case "fullTime":
-        return `${moment.tz("Asia/Kolkata").format("HH:mm:ss DD/MM/YYYY")}`;
-    }
+    return moment.tz("Asia/Kolkata").format({
+      seconds: "ss",
+      minutes: "mm",
+      hours: "HH",
+      date: "DD",
+      month: "MM",
+      year: "YYYY",
+      fullHour: "HH:mm:ss",
+      fullYear: "DD/MM/YYYY",
+      fullTime: "HH:mm:ss DD/MM/YYYY"
+    }[option] || "");
   }
 };
 
@@ -62,133 +55,101 @@ global.configModule = {};
 global.moduleData = [];
 global.language = {};
 
-//////////////////////////////////////////////////////////
-//========= Find and get variable from Config =========//
-//////////////////////////////////////////////////////////
-
-let configValue;
+// Load config.json
 try {
   global.client.configPath = join(global.client.mainPath, "config.json");
-  configValue = require(global.client.configPath);
-  logger.loader("Found file config: config.json");
-} catch {
-  const tempPath = global.client.configPath.replace(/.json/g, "") + ".temp";
-  if (existsSync(tempPath)) {
-    configValue = JSON.parse(readFileSync(tempPath));
-    logger.loader(`Found: ${tempPath}`);
-  } else {
-    return logger.loader("config.json not found!", "error");
-  }
+  const configValue = require(global.client.configPath);
+  Object.assign(global.config, configValue);
+  logger.loader("Found and loaded config.json");
+} catch (e) {
+  return logger.loader("❌ config.json not found!", "error");
 }
 
-try {
-  for (const key in configValue) global.config[key] = configValue[key];
-  logger.loader("Config Loaded!");
-} catch {
-  return logger.loader("Can't load file config!", "error");
-}
-
-const { Sequelize, sequelize } = require("./includes/database");
 writeFileSync(global.client.configPath + ".temp", JSON.stringify(global.config, null, 4), 'utf8');
 
-/////////////////////////////////////////
-//========= Load language use =========//
-/////////////////////////////////////////
-
-const langFile = readFileSync(`${__dirname}/languages/${global.config.language || "en"}.lang`, { encoding: 'utf-8' }).split(/\r?\n|\r/);
-const langData = langFile.filter(item => item.indexOf('#') != 0 && item != '');
-for (const item of langData) {
-  const getSeparator = item.indexOf('=');
-  const itemKey = item.slice(0, getSeparator);
-  const itemValue = item.slice(getSeparator + 1);
-  const head = itemKey.slice(0, itemKey.indexOf('.'));
-  const key = itemKey.replace(head + '.', '');
-  const value = itemValue.replace(/\n/gi, '\n');
-  if (typeof global.language[head] === "undefined") global.language[head] = {};
-  global.language[head][key] = value;
+// Load language
+const langFile = readFileSync(`${__dirname}/languages/${global.config.language || "en"}.lang`, "utf8").split(/\r?\n|\r/);
+for (const line of langFile.filter(l => l.trim() && !l.startsWith("#"))) {
+  const [key, ...valueParts] = line.split("=");
+  const value = valueParts.join("=");
+  const [head, subkey] = key.split(".");
+  global.language[head] = global.language[head] || {};
+  global.language[head][subkey] = value;
 }
-
 global.getText = function (...args) {
-  const langText = global.language;
-  if (!langText.hasOwnProperty(args[0])) throw `${__filename} - Not found key language: ${args[0]}`;
-  let text = langText[args[0]][args[1]];
-  for (let i = args.length - 1; i > 0; i--) {
-    const regEx = RegExp(`%${i}`, 'g');
-    text = text.replace(regEx, args[i + 1]);
-  }
+  let text = global.language?.[args[0]]?.[args[1]] || "";
+  for (let i = 2; i < args.length; i++) text = text.replace(new RegExp(`%${i - 1}`, "g"), args[i]);
   return text;
 };
 
-let appStateFile;
+// Load appstate
 let appState;
 try {
-  appStateFile = resolve(join(global.client.mainPath, global.config.APPSTATEPATH || "appstate.json"));
-  appState = require(appStateFile);
+  appState = require(resolve(global.client.mainPath, global.config.APPSTATEPATH || "appstate.json"));
   logger.loader(global.getText("priyansh", "foundPathAppstate"));
 } catch {
   return logger.loader(global.getText("priyansh", "notFoundPathAppstate"), "error");
 }
 
-//========= Login and Load Events/Commands =========//
+// On Bot start
+function onBot({ models }) {
+  login({ appState }, async (err, api) => {
+    if (err) return logger(JSON.stringify(err), "ERROR");
 
-function onBot({ models: botModel }) {
-  const loginData = { appState };
-  login(loginData, async (loginError, loginApiData) => {
-    if (loginError) return logger(JSON.stringify(loginError), "ERROR");
+    api.setOptions(global.config.FCAOption);
+    writeFileSync(global.client.configPath, JSON.stringify(global.config, null, 4));
+    writeFileSync(global.config.APPSTATEPATH || "appstate.json", JSON.stringify(api.getAppState(), null, 2));
 
-    loginApiData.setOptions(global.config.FCAOption);
-    writeFileSync(appStateFile, JSON.stringify(loginApiData.getAppState(), null, '\t'));
+    global.client.api = api;
+    global.client.timeStart = Date.now();
 
-    global.client.api = loginApiData;
-    global.config.version = '1.2.14';
-    global.client.timeStart = new Date().getTime();
-
-    // Load commands
-    require('./includes/loadCommand')(loginApiData, botModel);
-
-    // Load events
-    require('./includes/loadEvent')(loginApiData, botModel);
-
-    logger.loader(global.getText('priyansh', 'finishLoadModule', global.client.commands.size, global.client.events.size));
-    logger.loader(`Startup Time: ${((Date.now() - global.client.timeStart) / 1000).toFixed()}s`);
-    logger.loader('===== [ ' + (Date.now() - global.client.timeStart) + 'ms ] =====');
-
-    writeFileSync(global.client.configPath, JSON.stringify(global.config, null, 4), 'utf8');
-    unlinkSync(global.client.configPath + '.temp');
-
-    const listenerData = { api: loginApiData, models: botModel };
-    const listener = require('./includes/listen')(listenerData);
-
-    function listenerCallback(error, message) {
-      if (error) return logger(global.getText('priyansh', 'handleListenError', JSON.stringify(error)), 'error');
-      if (['presence', 'typ', 'read_receipt'].includes(message.type)) return;
-      if (global.config.DeveloperMode === true) console.log(message);
-      return listener(message);
+    // Load commands directly
+    const cmdDir = join(global.client.mainPath, 'Rudra', 'commands');
+    for (const file of readdirSync(cmdDir).filter(f => f.endsWith(".js"))) {
+      try {
+        const command = require(join(cmdDir, file));
+        global.client.commands.set(command.config.name, command);
+        logger.loader(`✅ Loaded Command: ${command.config.name}`);
+      } catch (e) {
+        logger.loader(`❌ Error loading command ${file}: ${e.message}`, "error");
+      }
     }
 
-    global.handleListen = loginApiData.listenMqtt(listenerCallback);
-
-    try {
-      await checkBan(loginApiData);
-    } catch (error) {
-      return;
+    // Load events directly
+    const evtDir = join(global.client.mainPath, 'Rudra', 'events');
+    for (const file of readdirSync(evtDir).filter(f => f.endsWith(".js"))) {
+      try {
+        const event = require(join(evtDir, file));
+        global.client.events.set(event.config.name, event);
+        logger.loader(`✅ Loaded Event: ${event.config.name}`);
+      } catch (e) {
+        logger.loader(`❌ Error loading event ${file}: ${e.message}`, "error");
+      }
     }
 
-    if (!global.checkBan) logger(global.getText('priyansh', 'warningSourceCode'), '[ GLOBAL BAN ]');
+    logger.loader(`🚀 All Modules Loaded | Commands: ${global.client.commands.size} | Events: ${global.client.events.size}`);
+    logger.loader(`⏱️ Startup Time: ${((Date.now() - global.client.timeStart) / 1000).toFixed(2)}s`);
+
+    const listener = require('./includes/listen')({ api, models });
+    global.handleListen = api.listenMqtt((err, msg) => {
+      if (err) return logger(global.getText('priyansh', 'handleListenError', JSON.stringify(err)), "error");
+      if (["presence", "typ", "read_receipt"].includes(msg.type)) return;
+      if (global.config.DeveloperMode) console.log(msg);
+      return listener(msg);
+    });
   });
 }
 
-//========= Connecting to Database =========//
-
+// Connect DB
 (async () => {
   try {
     await sequelize.authenticate();
     const models = require('./includes/database/model')({ Sequelize, sequelize });
-    logger(global.getText('priyansh', 'successConnectDatabase'), '[ DATABASE ]');
+    logger(global.getText('priyansh', 'successConnectDatabase'), "[ DATABASE ]");
     onBot({ models });
-  } catch (error) {
-    logger(global.getText('priyansh', 'successConnectDatabase', JSON.stringify(error)), '[ DATABASE ]');
+  } catch (e) {
+    logger(global.getText('priyansh', 'successConnectDatabase', JSON.stringify(e)), "[ DATABASE ]");
   }
 })();
 
-process.on('unhandledRejection', (err, p) => {});
+process.on('unhandledRejection', () => {});
