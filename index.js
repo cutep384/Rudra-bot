@@ -45,13 +45,18 @@ function startBot(message) {
     });
 
     child.on("close", (codeExit) => {
-        if (codeExit !== 0 && global.countRestart < 5) {
-            global.countRestart++;
-            logger(`🔁 Bot exited with code ${codeExit}. Restarting... (${global.countRestart}/5)`, "[ Restarting ]");
-            startBot();
-        } else {
-            logger(`🛑 Bot stopped after ${global.countRestart} restarts.`, "[ Stopped ]");
+        logger(`🔁 Bot exited with code ${codeExit}`, "[ Exit ]");
+
+        if (global.countRestart >= 5) {
+            logger(`🛑 Max restart attempts reached`, "[ Stopped ]");
+            return;
         }
+
+        logger(`🔄 Restarting bot in 3s...`, "[ Restarting ]");
+        setTimeout(() => {
+            global.countRestart++;
+            startBot();
+        }, 3000);
     });
 
     child.on("error", (error) => {
