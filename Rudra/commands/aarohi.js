@@ -3,39 +3,44 @@ const axios = require("axios");
 module.exports = {
   config: {
     name: "aarohi",
-    version: "2.0.1",
+    version: "1.0.0",
     author: "Rudra",
     countDown: 2,
     role: 0,
-    shortDescription: "Aarohi - naughty AI girlfriend",
-    longDescription: "Chat with Aarohi in Hinglish, flirty & funny replies",
+    shortDescription: "Flirty AI girlfriend",
+    longDescription: "Chat with Aarohi — your Hinglish flirty AI girlfriend.",
     category: "ai",
     guide: {
-      en: "Type 'aarohi' or 'aaru' or 'आरोही' to activate, then reply to her message to chat"
+      en: "Type 'aarohi' to start chatting with her"
     }
   },
 
-  onMessage: async function ({ message, event }) {
+  onStart: async function ({ message }) {
+    return message.reply("Aap mujhe 'aarohi', 'aaru', ya 'आरोही' likh kar baat kar sakte hain 😘");
+  },
+
+  onChat: async function ({ event, message }) {
     const { threadID, senderID, body, messageReply } = event;
+
+    // Trigger words
+    const triggers = ["aarohi", "aaru", "Aarohi", "Aaru", "आरोही"];
+    const lowerBody = body?.trim().toLowerCase();
 
     global.aarohiSessions = global.aarohiSessions || {};
 
-    // Trigger words for activation
-    const triggerWords = ["aarohi", "aaru", "Aarohi", "Aaru", "आरोही"];
-    const lowerBody = body.trim().toLowerCase();
-
-    // STEP 1: Trigger activation
-    if (triggerWords.includes(lowerBody)) {
+    // If trigger word is used
+    if (triggers.includes(lowerBody)) {
       global.aarohiSessions[threadID] = true;
-      return message.reply("Bolo jaanu 😘 kya haal hai?");
+      return message.reply("Aapne mujhe bulaaya? Bolo jaanu 😘 kya haal hai?");
     }
 
-    // STEP 2: Check if Aarohi is active and reply is to bot
+    // Check if session active and it's a reply to bot
     const isActive = global.aarohiSessions[threadID];
-    const isReplyToAarohi = messageReply && messageReply.senderID === global.GoatBot.botID;
-    if (!isActive || !isReplyToAarohi) return;
+    const isReplyToBot = messageReply && messageReply.senderID === global.GoatBot.botID;
 
-    // History tracking
+    if (!isActive || !isReplyToBot) return;
+
+    // Chat history per sender
     global.aarohi = global.aarohi || {};
     global.aarohi.chatHistory = global.aarohi.chatHistory || {};
     const chatHistory = global.aarohi.chatHistory;
@@ -80,7 +85,7 @@ Now continue the chat based on recent conversation:\n\n${fullChat}
       return message.reply(botReply);
     } catch (err) {
       console.error("Gemini API error:", err.message);
-      return message.reply("Sorry jaan! Aarohi abhi thoda busy hai... thodi der baad milte hain 😘");
+      return message.reply("Oops! Aarohi abhi thoda busy hai... baad me try karo 😘");
     }
   }
 };
