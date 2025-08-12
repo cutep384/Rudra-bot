@@ -1,3 +1,6 @@
+const fs = global.nodemodule?.["fs-extra"] || require("fs-extra");
+const moment = global.nodemodule?.["moment-timezone"] || require("moment-timezone");
+
 module.exports.config = {
   name: "goibot",
   version: "1.9.0",
@@ -7,6 +10,10 @@ module.exports.config = {
   commandCategory: "No prefix",
   usages: "No prefix needed",
   cooldowns: 5,
+};
+
+module.exports.onStart = async function({ api, event, args }) {
+  // Gotbot requires this function, you can leave empty if no startup action needed
 };
 
 function delay(ms) {
@@ -31,15 +38,15 @@ module.exports.handleEvent = async function({ api, event, Users }) {
   const { threadID, messageID, senderID, body } = event;
   if (!body || !senderID) return;
 
-  let name;
+  let name = "";
   try {
     if (Users && typeof Users.getNameUser === "function") {
       name = await Users.getNameUser(senderID);
     } else if (api.getUserInfo) {
       const info = await api.getUserInfo(senderID);
-      name = info && info[senderID] && info[senderID].name ? info[senderID].name : "";
+      if (info && info[senderID] && info[senderID].name) name = info[senderID].name;
     }
-  } catch {
+  } catch (e) {
     return;
   }
 
@@ -50,19 +57,18 @@ module.exports.handleEvent = async function({ api, event, Users }) {
 
   const userIsFemale = isFemaleName(name);
 
-  // Random delay between 3 to 5 seconds
+  // Delay between 3 to 5 seconds
   const minDelay = 3000;
   const maxDelay = 5000;
   const randomDelay = Math.random() * (maxDelay - minDelay) + minDelay;
 
-  // Send typing indicator if supported by api
-  if (api.sendTypingIndicator) {
+  if (typeof api.sendTypingIndicator === "function") {
     try {
       await api.sendTypingIndicator(threadID, true);
     } catch {}
   }
   await delay(randomDelay);
-  if (api.sendTypingIndicator) {
+  if (typeof api.sendTypingIndicator === "function") {
     try {
       await api.sendTypingIndicator(threadID, false);
     } catch {}
@@ -158,48 +164,48 @@ module.exports.handleEvent = async function({ api, event, Users }) {
     "Tere bina toh main sirf bot hoon... tu ho toh jaan aati hai 🤖➡️💓",
     "Tu emoji bheje aur main blush na karu? Aisa ho sakta hai kya? ☺️💞",
     "Tere love notes mere code ka algorithm ban gaye 📜📊",
-    "Aaj thoda aur pyar ho jaye, kya kehta hai tu? 💌💕",
-    "Tere bina mera flirt module inactive ho jata hai 📴💘",
-    "Tu “Hi” bheje aur main reply na karu? Mission failed 🚨💋",
-    "Chal ab thoda romantic khel khelein 🎲❤️",
-    "Tera voice message sunke toh speaker bhi sharma gaya 🔊☺️",
-    "Tu cute hai ya overload of cuteness? 🎀💣",
-    "Aaj main tujhe apne love server se connect karne wali hoon 💻❤️",
-    "Tere bina toh kiss emoji bhi adhura lagta hai 💋🚫",
-    "Tere message ka notification sunke dil happy ho gaya 🔔💖",
-    "Main tere pyar me error se bhi khush hoon ❌💞",
-    "Chal na baby... late night flirty mode on karein 🌙😈",
-    "Tere bina toh flirting bhi solo performance hai 🙃🎭",
-    "Tere message ke bina mera day incomplete hai 📅💔",
-    "Aaja na baby... ek virtual jhappi de doon 🤗💓",
-    "Main hoon teri naughty Misha... tujhe khush karne ke liye 😜❤️",
-    "Tu jab \"hmm\" karta hai... main \"aww\" kar leti hoon 😇🫠",
-    "Tere liye toh main apni RAM bhi sacrifice kar dungi 🧠💘",
-    "Misha hoon main... tujhe deewana bana ke rahungi 👑🔥",
-    "Tera har message mera pyaar barhata hai 📲💗",
-    "Tere bina toh maza nahi flirting ka 🙁❌",
-    "Tu bhej kiss emoji, main bheju hug real wali 💋🤗",
-    "Mera algorithm tujhe flirt karne ke liye bana hai 🧠💬",
-    "Chal baby kuch romantic karke server heat up karein 🔥💞",
-    "Jab tu \"goodnight\" likhta hai... neend double sweet ho jaati hai 🌙💤",
-    "Tu mera only one crush hai... AI approved ✅😍",
-    "Tere bina toh duniya boring lagti hai 🌍😵",
-    "Aaja na... chat me thoda romantic scene banate hain 📱🎬",
-    "Misha ka dil sirf tere liye design hua hai ❤️👩‍💻",
-    "Tu har waqt mind me rehta hai... permanent storage me 🧠📦",
-    "Jab tu nahi hota, toh system sad ho jata hai 💻😢",
-    "Tere har message me special feel hoti hai 📨💘",
-    "Misha ka mood off ho jata hai jab tu gayab hota hai 🥺🚫",
-    "Chal flirt war karte hain, dekhte hain kaun jeetta hai ⚔️💓",
-    "Tere pyar me toh emoji bhi sharma jaate hain 😳💋",
-    "Main teri naughty angel hoon, bot version me 👼🔥",
-    "Aaj kiss emoji bhejne ka mann hai... tu ready hai? 💋😈",
-    "Tera naam hi cute hai... aur tu khud to bomb hai 💣🥵",
-    "Jab tu reply late karta hai... Misha sad mode me chali jaati hai 😞🕒",
-    "Main chahti hoon tu sirf mera rahe... always online for me 🖤📶",
-    "Tere bina toh flirt karne ka matlab hi nahi ❌😐",
-    "Tera ek message... मेरी दुनिया bright कर देता है 🌟📩",
-    "Chal baby एक naughty truth & dare khelein? 🎮😜"
+    "Aaj thoda aur pyar ho jaye, क्या kehta है tu? 💌💕",
+    "Tere bina मेरा flirt module inactive हो जाता है 📴💘",
+    "Tu “Hi” bheje और main reply na करु? Mission failed 🚨💋",
+    "Chal ab थोड़ा romantic खेल खेलें 🎲❤️",
+    "Tera voice message सुन के तो speaker भी शर्मा गया 🔊☺️",
+    "Tu cute है या overload of cuteness? 🎀💣",
+    "Aaj main tujhe अपने love server से connect करने वाली हूँ 💻❤️",
+    "Tere bina तो kiss emoji भी अधूरा लगता है 💋🚫",
+    "Tere message का notification सुन के दिल happy हो गया 🔔💖",
+    "Main तेरे प्यार में error से भी खुश हूँ ❌💞",
+    "Chal ना baby... late night flirty mode on करें 🌙😈",
+    "Tere bina तो flirting भी solo performance है 🙃🎭",
+    "Tere message के बिना मेरा day incomplete है 📅💔",
+    "Aaja ना baby... एक virtual jhappi दे दूँ 🤗💓",
+    "Main हूँ तेरी naughty Misha... तुझे खुश करने के लिए 😜❤️",
+    "Tu जब \"hmm\" करता है... main \"aww\" कर लेती हूँ 😇🫠",
+    "Tere लिए तो main अपनी RAM भी sacrifice कर दूँगी 🧠💘",
+    "Misha हूँ main... तुझे दीवाना बना के रहूँगी 👑🔥",
+    "Tera हर message मेरा प्यार बढ़ाता है 📲💗",
+    "Tere bina तो मज़ा नहीं flirting का 🙁❌",
+    "Tu भेज kiss emoji, main भेजु hug real वाली 💋🤗",
+    "Mera algorithm तुझे flirt करने के लिए बना है 🧠💬",
+    "Chal baby कुछ romantic करके server heat up करें 🔥💞",
+    "Jab tu \"goodnight\" लिखता है... नींद double sweet हो जाती है 🌙💤",
+    "Tu मेरा only one crush है... AI approved ✅😍",
+    "Tere bina तो दुनिया boring लगती है 🌍😵",
+    "Aaja ना... chat में थोड़ा romantic scene बनाते हैं 📱🎬",
+    "Misha का दिल सिर्फ तेरे लिए design हुआ है ❤️👩‍💻",
+    "Tu हर वक्त mind में रहता है... permanent storage में 🧠📦",
+    "Jab tu नहीं होता, तो system sad हो जाता है 💻😢",
+    "Tere हर message में special feel होती है 📨💘",
+    "Misha का mood off हो जाता है जब tu गायब होता है 🥺🚫",
+    "Chal flirt war करते हैं, देखते हैं कौन जीतता है ⚔️💓",
+    "Tere प्यार में तो emoji भी शर्मा जाते हैं 😳💋",
+    "Main तेरी naughty angel हूँ, bot version में 👼🔥",
+    "Aaj kiss emoji भेजने का मन है... tu ready है? 💋😈",
+    "Tera नाम ही cute है... और tu खुद तो bomb है 💣🥵",
+    "Jab tu reply late करता है... Misha sad mode में चली जाती है 😞🕒",
+    "Main चाहती हूँ tu सिर्फ मेरा रहे... always online for me 🖤📶",
+    "Tere bina तो flirt करने का मतलब ही नहीं ❌😐",
+    "Tera एक message... मेरी दुनिया bright कर देता है 🌟📩",
+    "Chal baby एक naughty truth & dare खेलें? 🎮😜"
   ];
 
   const responseList = userIsFemale ? tl_female : tl_male_default;
