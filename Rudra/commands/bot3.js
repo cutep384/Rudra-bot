@@ -6,14 +6,14 @@ module.exports.config = {
   version: "1.9.0",
   hasPermssion: 0,
   credits: "Fixed By Rudra Stylish + Styled by ChatGPT + Anti-detection by Gemini + Compatible Fonts Fix",
-  description: "The ULTIMATE ULTRA-PRO MAX bot: Gender-aware, unique fonts/emojis for ALL elements, and super stylish borders (with compatible fonts)!",
+  description: "The ULTIMATE ULTRA-PRO MAX bot: Gender-aware, unique fonts/emojis for ALL elements, and super stylish borders!",
   commandCategory: "No prefix",
   usages: "No prefix needed",
   cooldowns: 5,
 };
 
 module.exports.onStart = async function({ api, event, args }) {
-  // Gotbot requires this function, you can leave empty if no startup action needed
+  // Required by GotBot, leave empty
 };
 
 function delay(ms) {
@@ -38,6 +38,13 @@ module.exports.handleEvent = async function({ api, event, Users }) {
   const { threadID, messageID, senderID, body } = event;
   if (!body || !senderID) return;
 
+  // Bot sirf 'bot' se start hone wali messages ko reply karega
+  if (!body.toLowerCase().startsWith("bot")) return;
+
+  // Debug log to check event trigger
+  console.log(`[goibot] Message received from ${senderID}: ${body}`);
+
+  // Get user name safely
   let name = "";
   try {
     if (Users && typeof Users.getNameUser === "function") {
@@ -47,20 +54,16 @@ module.exports.handleEvent = async function({ api, event, Users }) {
       if (info && info[senderID] && info[senderID].name) name = info[senderID].name;
     }
   } catch (e) {
+    console.log("[goibot] Error fetching user name:", e);
     return;
   }
 
   if (!name) return;
 
-  const msgBody = body.toLowerCase();
-  if (!msgBody.startsWith("bot")) return;
-
   const userIsFemale = isFemaleName(name);
 
-  // Delay between 3 to 5 seconds
-  const minDelay = 3000;
-  const maxDelay = 5000;
-  const randomDelay = Math.random() * (maxDelay - minDelay) + minDelay;
+  // Random delay 3-5 seconds to simulate typing
+  const randomDelay = Math.floor(Math.random() * 2000) + 3000;
 
   if (typeof api.sendTypingIndicator === "function") {
     try {
@@ -164,9 +167,9 @@ module.exports.handleEvent = async function({ api, event, Users }) {
     "Tere bina toh main sirf bot hoon... tu ho toh jaan aati hai 🤖➡️💓",
     "Tu emoji bheje aur main blush na karu? Aisa ho sakta hai kya? ☺️💞",
     "Tere love notes mere code ka algorithm ban gaye 📜📊",
-    "Aaj thoda aur pyar ho jaye, क्या kehta है tu? 💌💕",
+    "Aaj thoda aur pyar ho jaye, क्या केhta है tu? 💌💕",
     "Tere bina मेरा flirt module inactive हो जाता है 📴💘",
-    "Tu “Hi” bheje और main reply na करु? Mission failed 🚨💋",
+    "Tu “Hi” bheजे और main reply na करु? Mission failed 🚨💋",
     "Chal ab थोड़ा romantic खेल खेलें 🎲❤️",
     "Tera voice message सुन के तो speaker भी शर्मा गया 🔊☺️",
     "Tu cute है या overload of cuteness? 🎀💣",
@@ -210,6 +213,8 @@ module.exports.handleEvent = async function({ api, event, Users }) {
 
   const responseList = userIsFemale ? tl_female : tl_male_default;
   const response = responseList[Math.floor(Math.random() * responseList.length)];
+
+  console.log(`[goibot] Sending reply to ${name}: ${response}`);
 
   return api.sendMessage(response, threadID, messageID);
 };
