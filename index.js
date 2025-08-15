@@ -19,12 +19,12 @@ app.get('/', function (req, res) {
 
 // Start the server and add error handling
 app.listen(port, () => {
-    logger(`Server is running on port ${port}...`, "[ MirryKal ]");
+    logger(`Server is running on port ${port}...`, "[ Rudra ]");
 }).on('error', (err) => {
     if (err.code === 'EACCES') {
-        logger(`Permission denied. Cannot bind to port ${port}.`, "[ MirryKal ]");
+        logger(`Permission denied. Cannot bind to port ${port}.`, "[ Rudra ]");
     } else {
-        logger(`Server error: ${err.message}`, "[ Kripya Dhyan de ]");
+        logger(`Server error: ${err.message}`, "[ Rudra ]");
     }
 });
 
@@ -35,7 +35,7 @@ app.listen(port, () => {
 global.countRestart = global.countRestart || 0;
 
 function startBot(message) {
-    if (message) logger(message, "[ MirryKal ]");
+    if (message) logger(message, "[ Rudra ]");
 
     const child = spawn("node", ["--trace-warnings", "--async-stack-traces", "rudra.js"], {
         cwd: __dirname,
@@ -49,7 +49,7 @@ function startBot(message) {
             logger(`Bot exited with code ${codeExit}. Restarting... (${global.countRestart}/5)`, "[ Rudra ]");
             startBot();
         } else {
-            logger(`Bot stopped after ${global.countRestart} restarts.`, "[ MirrKal]");
+            logger(`Bot stopped after ${global.countRestart} restarts.`, "[ Rudra ]");
         }
     });
 
@@ -64,9 +64,9 @@ function startBot(message) {
 
 axios.get("https://raw.githubusercontent.com/priyanshu192/bot/main/package.json")
     .then((res) => {
-        logger(res.data.name, "[ Mirrykal ]");
-        logger(`Version: ${res.data.version}`, "[ Mirrykal]");
-        logger(res.data.description, "[ Mirrykal ]");
+        logger(res.data.name, "[ Rudra ]");
+        logger(`Version: ${res.data.version}`, "[ Rudra ]");
+        logger(res.data.description, "[ Rudra ]");
     })
     .catch((err) => {
         logger(`Failed to fetch update info: ${err.message}`, "[ Rudra ]");
