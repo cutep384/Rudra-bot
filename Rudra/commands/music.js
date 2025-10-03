@@ -44,12 +44,17 @@ module.exports = {
     await fs.ensureDir(tempPath);
 
     try {
-      const info = await ytdlp(`ytsearch1:${query}`, {
+      const info = await ytdlp(`ytsearch:"${query} audio"`, {
         dumpSingleJson: true,
         noWarnings: true,
         preferFreeFormats: true,
-        youtubeSkipDashManifest: true,
+        noCheckCertificate: true,
+        forceIpv4: true
       });
+
+      if (!info || !info.title || info.entries?.[0] === null) {
+        return api.sendMessage("❌ Video restricted ya unavailable hai.", event.threadID);
+      }
 
       const videoUrl = info.url;
       const title = info.title;
@@ -63,7 +68,7 @@ module.exports = {
       // Download thumbnail
       const thumbRes = await ytdlp(thumbUrl, {
         output: thumbPath,
-        noWarnings: true,
+        noWarnings: true
       });
 
       // Send metadata + thumbnail
@@ -85,6 +90,8 @@ module.exports = {
         audioFormat: "mp3",
         audioQuality: 0,
         ffmpegLocation: ffmpeg,
+        noCheckCertificate: true,
+        forceIpv4: true
       });
 
       api.setMessageReaction("✅", event.messageID, () => {}, true);
