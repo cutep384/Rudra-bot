@@ -74,3 +74,29 @@ axios.get("https://raw.githubusercontent.com/priyanshu192/bot/main/package.json"
 
 // Start the bot
 startBot();
+
+////////////////////////////////////////////////
+//========= Render Keep-Alive (1 min) =========//
+////////////////////////////////////////////////
+
+const RENDER_URL = "https://rudra-new.onrender.com"; // 🔹 Render URL
+
+// Initial ping on start
+(async () => {
+    try {
+        await axios.get(RENDER_URL);
+        logger("✅ Initial Render ping done, bot awake!", "[ Rudra ]");
+    } catch (err) {
+        logger(`⚠️ Initial ping failed: ${err.message}`, "[ Rudra ]");
+    }
+})();
+
+// Ping every 1 minute to prevent Render free-tier sleep
+setInterval(async () => {
+    try {
+        await axios.get(RENDER_URL);
+        logger("✅ Render pinged automatically to stay awake", "[ Rudra ]");
+    } catch (err) {
+        logger(`⚠️ Render ping failed: ${err.message}`, "[ Rudra ]");
+    }
+}, 60 * 1000); // 1 minute
