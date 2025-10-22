@@ -15,7 +15,7 @@ function verifyTagline(text) {
 
 module.exports.config = {
   name: "pintrest",
-  version: "2.0.0",
+  version: "2.1.0",
   hasPermssion: 0,
   get credits() {
     return lockedCredits;
@@ -43,7 +43,7 @@ module.exports.run = async ({ api, event, args }) => {
     if (!fs.existsSync(cachePath)) fs.mkdirSync(cachePath);
 
     // ✅ Updated Render URL
-    const url = `https://rudra-pintrest-server.onrender.com/dp?q=${encodeURIComponent(query)}&n=${count}`;
+    const url = `https://pintrest-0x1z.onrender.com/dp?q=${encodeURIComponent(query)}&n=${count}`;
     const res = await axios.get(url);
 
     if (!res.data || res.data.status !== "success" || !res.data.data.length) {
@@ -54,24 +54,33 @@ module.exports.run = async ({ api, event, args }) => {
     const attachments = [];
 
     for (let i = 0; i < images.length; i++) {
-      const imgPath = path.join(cachePath, `dp${i}.jpg`);
-      const imgBuffer = (await axios.get(images[i], { responseType: "arraybuffer" })).data;
-      fs.writeFileSync(imgPath, imgBuffer);
-      attachments.push(fs.createReadStream(imgPath));
+      try {
+        const imgPath = path.join(cachePath, `dp${i}.jpg`);
+        const imgBuffer = (await axios.get(images[i], { responseType: "arraybuffer" })).data;
+        fs.writeFileSync(imgPath, imgBuffer);
+        attachments.push(fs.createReadStream(imgPath));
+      } catch(err){
+        console.warn(`⚠️ Failed to fetch image ${i+1}, skipping.`, err.message);
+      }
+    }
+
+    if(attachments.length === 0) {
+      return api.sendMessage("❌ All image fetch attempts failed. Try another keyword.", event.threadID);
     }
 
     // 🔒 Protected caption
-    const caption = `📸 Here's your *${count}* stylish DP (${query})\n${lockedTagline}`;
-    verifyTagline(caption); // validate before sending
+    const caption = `📸 Here's your *${attachments.length}* stylish DP (${query})\n${lockedTagline}`;
+    verifyTagline(caption);
 
     api.sendMessage({
       body: caption,
       attachment: attachments
     }, event.threadID, () => {
-      for (let i = 0; i < images.length; i++) {
+      // Cleanup all downloaded images
+      attachments.forEach((_, i) => {
         const imgPath = path.join(cachePath, `dp${i}.jpg`);
-        fs.unlinkSync(imgPath);
-      }
+        if(fs.existsSync(imgPath)) fs.unlinkSync(imgPath);
+      });
     }, event.messageID);
 
   } catch (err) {
